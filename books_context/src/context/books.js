@@ -1,17 +1,66 @@
 import { createContext, useState } from 'react';
+import axios from 'axios';
 
 //Create context:
 const BooksContext = createContext();
 
 //define the component Provider:
 function Provider({ children }) {  //Custom Provider
-    const [count, setCount] = useState(0);
+    const [books, setBooks] = useState([]);
+    
+      const fetchBooks = async () => {
+        try {
+          const response = await axios.get('http://localhost:3000/books');
+          setBooks(response.data);
+        } catch (error) {
+          console.error('Error fetching books:', error);
+        }
+      };
+
+      const editBookById = async (id, newTitle) => {
+        const response = await axios.put(`http://localhost:3000/books/${id}`, {
+          title: newTitle,
+        });
+    
+        const updatedBooks = books.map((book) => {
+          if (book.id === id) {
+            return { ...book, ...response.data };
+          }
+    
+          return book;
+        });
+    
+        setBooks(updatedBooks);
+      };
+    
+      const deleteBookById = async (id) => {
+        await axios.delete(`http://localhost:3000/books/${id}`);
+    
+        const updatedBooks = books.filter((book) => {
+          return book.id !== id;
+        });
+    
+        setBooks(updatedBooks);
+      };
+    
+      const createBook = async (title) => {
+        const response = await axios.post('http://localhost:3000/books', {
+          title,
+        });
+    
+        const updatedBooks = [...books, response.data];
+        setBooks(updatedBooks);
+      };
+
+   // const [count, setCount] = useState(0);
 
     const valueToShare = {  //Object we want to share with all our components
-        count: count, 
-        incrementCount: () => {
-            setCount(count + 1);
-        }
+      //count: count, //si las llaves count y los valores son identicos en este caso (count) se puede dejar un solo
+      books,
+      deleteBookById,
+      editBookById,
+      createBook,
+      fetchBooks
     };
 
     return (                            //Object we want to share with all our components
